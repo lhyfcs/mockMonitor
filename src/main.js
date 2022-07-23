@@ -6,11 +6,12 @@ import * as echarts from 'echarts'
 import 'echarts-liquidfill'
 import 'signalr'
 
-import { Select, Option } from 'element-ui';
+import { Select, Option, Slider } from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css'
 import './css/main.css'
 Vue.component(Select.name, Select);
-Vue.component(Option.name, Option)
+Vue.component(Option.name, Option);
+Vue.component(Slider.name, Slider);
 
 Vue.prototype.$echarts = echarts
 

@@ -3,7 +3,7 @@
 export const defaultImage = {
   id: 'cpu1',
   title: {
-    text: 'CPU1使用率'
+    text: 'CPU使用率'
   },
   xAxis: [
     {
@@ -30,7 +30,7 @@ export const defaultImage = {
 }
 
 export function generateImages(count) {
-  const images = Array(count).map(() => defaultImage);
+  const images = Array(count).fill({}).map(() => JSON.parse(JSON.stringify(defaultImage)));
   images.forEach((image, index) => image.id = `cpu${index}`);
   return images;
 }

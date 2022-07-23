@@ -1,7 +1,7 @@
 <template>
   <div id="app" >
     <h1 v-html = "title" class="center"></h1>
-    <el-select v-model="service.value" placeholder="Select">
+    <el-select v-model="service.value" placeholder="Select" @change="selectChange($event)">
       <el-option
         v-for="item in service.options"
         :key="item.value"
@@ -9,13 +9,19 @@
         :value="item.value">
       </el-option>
     </el-select>
+
     <h2 v-html = "golang" class="center"></h2>
     <div class="servicePanel">
-      <li v-for="(option, index) in options">
-        <Chart :id="'test'+index" :option="option"></Chart>
+      <li v-for="(option, index) in optionsGo">
+        <Chart :id="'mockGo'+index" :option="option"></Chart>
       </li>
     </div>
     <h2 v-html = "nodejs" class="center"></h2>
+    <div class="servicePanel">
+      <li v-for="(option, index) in optionsNode">
+        <Chart :id="'mockNode'+index" :option="option"></Chart>
+      </li>
+    </div>
   </div>
   
 </template>
@@ -28,8 +34,8 @@ window.jQuery = $;
 import Store from './store'
 import HelloWorld from './components/HelloWorld.vue'
 import Chart from './components/charts/DynamicCharts.vue';
-import { MockServices } from './data/MockService';
-
+import { MockServices, getService } from './data/MockService';
+import { generateImages } from './data/mockImages';
 export default {
   components: {
     HelloWorld,
@@ -41,61 +47,9 @@ export default {
       golang: 'Golang Services',
       nodejs: 'NodeJs Services',
       service: MockServices,
-      options: [{
-        id: 'cpu1',
-        title: {
-          text: 'CPU1使用率'
-        },
-        xAxis: [
-          {
-            type: 'category',
-            boundaryGap: false,
-            data: []
-          }
-        ],
-        yAxis: [
-          {
-            type: 'value',
-            max: 100,
-            axisLabel: {
-              formatter: '{value} %'
-            }
-          }
-        ],
-        series: [
-          {
-            type: 'liquidFill',
-            data: [0.6]
-          }
-        ]
-      }, {
-        id: 'cpu2',
-        title: {
-          text: 'CPU2使用率'
-        },
-        xAxis: [
-          {
-            type: 'category',
-            boundaryGap: false,
-            data: []
-          }
-        ],
-        yAxis: [
-          {
-            type: 'value',
-            max: 100,
-            axisLabel: {
-              formatter: '{value} %'
-            }
-          }
-        ],
-        series: [
-          {
-            type: 'liquidFill',
-            data: [0.8]
-          }
-        ]
-      }]
+      selectService: {},
+      optionsGo: [],
+      optionsNode: [],
     };
   },
   mounted () {
@@ -134,39 +88,36 @@ export default {
       $.extend(signalR, signalR.hub.createHubProxies());
     },
     initdata () {
-      //for (let i = 0; i < 60; i++) {
-      //  this.option.series[0].data.push(this.rnd(30, 80));
-      //}
-      
-      this.options.map((option) => {
-        const liquidValue = this.rnd(30, 80) / 100;
-        option.series[0].data = [liquidValue]
-      })
+      this.optionsGo = generateImages(4);
+      this.optionsNode = generateImages(2);
+      this.selectService = getService(this.service.value);
+      // this.options.map((option) => {
+      //  const liquidValue = this.rnd(30, 80) / 100;
+      //  option.series[0].data = [liquidValue]
+      //})
     },
     connect () {
       var cpu = $.connection.cpuHub;
-      var that = this.options;
-      cpu.client.getCPUPercent = (pers) => {
-        //if (that.length >= 30) {
-        //  that.shift();
-        //}
-        //that.push(pers);
-        that.map((option) => {
+      const optionsGo = this.optionsGo;
+      const optionsNode = this.optionsNode;
+      cpu.client.getCPUPercent = () => {
+        optionsGo.forEach((option) => {
+          option.series[0].data = [this.rnd(30, 80) / 100];
+        });
+        optionsNode.forEach((option) => {
           option.series[0].data = [this.rnd(30, 80) / 100];
         });
       };
       window.setInterval(() => {
         cpu.client.getCPUPercent();
       }, 1000);
-      //$.connection.hub.start().done(function () {
-      //  window.setInterval(function () {
-      //    cpu.server.send(20);
-      //  }, 2000);
-      //});
     },
     rnd (n, m) {
       var random = Math.floor(Math.random() * (m - n + 1) + n);
       return random;
+    },
+    selectChange(e) {
+      this.selectService = getService(e);
     },
     makeProxyCallback (hub, callback) {
       return function () {
