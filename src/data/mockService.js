@@ -5,15 +5,15 @@ export const MockServices = {
     label: 'userService',
     index: 0,
     changePercent: 0,
-    pressRate: 0.1,
-    maxCount: 8
+    maxCount: 10,
+    images: {}
   }, {
     value: 'service2',
     label: 'imageService',
     index: 1,
     changePercent: 0,
-    pressRate: 1,
-    maxCount: 6
+    maxCount: 10,
+    images: {}
   }],
   value: 'service1'
 };

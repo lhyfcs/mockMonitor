@@ -9,7 +9,24 @@
         :value="item.value">
       </el-option>
     </el-select>
-
+    <div class="sliceBlock">
+      <span class="demonstration">Flow Rate</span>
+      <el-slider
+        v-model="flowRate"
+        :step="10"
+        show-stops
+        @change="sliderFlowRateChange($event)">
+      </el-slider>
+    </div>
+    <div class="sliceBlock" style="margin-top: 20px">
+      <span class="demonstration">Service Flow Change Percent</span>
+      <el-slider
+        v-model="selectService.changePercent"
+        :step="10"
+        show-stops
+        @change="sliderChange($event)">
+      </el-slider>
+    </div>
     <h2 v-html = "golang" class="center"></h2>
     <div class="servicePanel">
       <li v-for="(option, index) in optionsGo">
@@ -35,7 +52,7 @@ import Store from './store'
 import HelloWorld from './components/HelloWorld.vue'
 import Chart from './components/charts/DynamicCharts.vue';
 import { MockServices, getService } from './data/MockService';
-import { generateImages } from './data/mockImages';
+import { generateImages, connectComponent, updateImages } from './data/mockImages';
 export default {
   components: {
     HelloWorld,
@@ -47,6 +64,7 @@ export default {
       golang: 'Golang Services',
       nodejs: 'NodeJs Services',
       service: MockServices,
+      flowRate: 20,
       selectService: {},
       optionsGo: [],
       optionsNode: [],
@@ -56,7 +74,7 @@ export default {
     console.log('init');
     this.init();
     this.initdata();
-    this.connect();
+    connectComponent(this);
   },
   methods: {
     init () {
@@ -88,36 +106,28 @@ export default {
       $.extend(signalR, signalR.hub.createHubProxies());
     },
     initdata () {
-      this.optionsGo = generateImages(4);
-      this.optionsNode = generateImages(2);
       this.selectService = getService(this.service.value);
-      // this.options.map((option) => {
-      //  const liquidValue = this.rnd(30, 80) / 100;
-      //  option.series[0].data = [liquidValue]
-      //})
+      this.updateOptions();
     },
-    connect () {
-      var cpu = $.connection.cpuHub;
-      const optionsGo = this.optionsGo;
-      const optionsNode = this.optionsNode;
-      cpu.client.getCPUPercent = () => {
-        optionsGo.forEach((option) => {
-          option.series[0].data = [this.rnd(30, 80) / 100];
-        });
-        optionsNode.forEach((option) => {
-          option.series[0].data = [this.rnd(30, 80) / 100];
-        });
-      };
-      window.setInterval(() => {
-        cpu.client.getCPUPercent();
-      }, 1000);
+    updateOptions() {
+      const [optionsGo, optionsNode] = updateImages(this.flowRate, this.selectService, this.optionsGo, this.optionsNode);
+      this.selectService.images.optionsGo = optionsGo;
+      this.selectService.images.optionsNode = optionsNode;
+      this.optionsGo = this.selectService.images.optionsGo;
+      this.optionsNode = this.selectService.images.optionsNode;
     },
-    rnd (n, m) {
-      var random = Math.floor(Math.random() * (m - n + 1) + n);
-      return random;
+    rnd(low, high) {
+      return Math.floor(Math.random() * (high - low + 1) + low) * (Math.random() % 2 === 0 ? -1 : 1) / 100;
     },
     selectChange(e) {
       this.selectService = getService(e);
+      this.updateOptions();
+    },
+    sliderChange(e) {
+      this.updateOptions();
+    },
+    sliderFlowRateChange(e) {
+      this.updateOptions();
     },
     makeProxyCallback (hub, callback) {
       return function () {

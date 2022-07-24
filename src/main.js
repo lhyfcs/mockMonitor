@@ -8,6 +8,7 @@ import 'signalr'
 
 import { Select, Option, Slider } from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css'
+import 'element-ui/lib/theme-chalk/slider.css'
 import './css/main.css'
 Vue.component(Select.name, Select);
 Vue.component(Option.name, Option);

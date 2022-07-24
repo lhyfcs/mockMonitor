@@ -1,5 +1,24 @@
 .servicePanel {
   display: flex;
-  margin-top: 100px;
+  margin-top: 50px;
   flex-wrap: wrap;
+}
+
+.sliceBlock {
+  margin-top: 100px;
+  padding: 30px 24px;
+  overflow: hidden;
+  border-bottom: 1px solid #eff2f6;
+}
+
+.demonstration {
+  font-size: 14px;
+  color: #2c3e50;
+  line-height: 44px;
+}
+
+.demonstration+.el-slider {
+  float: right;
+  width: 75%;
+  margin-right: 10px;
 }
