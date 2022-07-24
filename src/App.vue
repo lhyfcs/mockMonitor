@@ -12,7 +12,7 @@
     <div class="sliceBlock">
       <span class="demonstration">Flow Rate</span>
       <el-slider
-        v-model="flowRate"
+        v-model="selectService.flowRate"
         :step="10"
         show-stops
         @change="sliderFlowRateChange($event)">
@@ -29,13 +29,13 @@
     </div>
     <h2 v-html = "golang" class="center"></h2>
     <div class="servicePanel">
-      <li v-for="(option, index) in optionsGo">
+      <li v-for="(option, index) in selectService.images.optionsGo">
         <Chart :id="'mockGo'+index" :option="option"></Chart>
       </li>
     </div>
     <h2 v-html = "nodejs" class="center"></h2>
     <div class="servicePanel">
-      <li v-for="(option, index) in optionsNode">
+      <li v-for="(option, index) in selectService.images.optionsNode">
         <Chart :id="'mockNode'+index" :option="option"></Chart>
       </li>
     </div>
@@ -64,10 +64,12 @@ export default {
       golang: 'Golang Services',
       nodejs: 'NodeJs Services',
       service: MockServices,
-      flowRate: 20,
-      selectService: {},
-      optionsGo: [],
-      optionsNode: [],
+      selectService: {
+        images: {
+          optionsGo: [],
+          optionsNode: []
+        }
+      },
     };
   },
   mounted () {
@@ -80,48 +82,26 @@ export default {
     init () {
       var signalR = $.signalR;
       var $this = this;
-      $.hubConnection.prototype.createHubProxies = function () {
-        var proxies = {};
-        this.starting(function () {
-          $this.registerHubProxies(proxies, true);
-          this._registerSubscribedHubs();
-        }).disconnected(function () {
-          $this.registerHubProxies(proxies, false);
-        });
-        proxies['cpuHub'] = this.createHubProxy('cpuHub');
-        proxies['cpuHub'].client = {};
-        proxies['cpuHub'].server = {
-          notify: function () {
-            return proxies['cpuHub'].invoke.apply(
-              proxies['cpuHub'],
-              $.merge(['Notify'], $.makeArray(arguments))
-            );
-          }
-        };
-        return proxies;
-      };
       signalR.hub = $.hubConnection('http://localhost: 57577/signalr', {
         useDefaultPath: false
       });
-      $.extend(signalR, signalR.hub.createHubProxies());
+      
     },
     initdata () {
       this.selectService = getService(this.service.value);
       this.updateOptions();
     },
-    updateOptions() {
-      const [optionsGo, optionsNode] = updateImages(this.flowRate, this.selectService, this.optionsGo, this.optionsNode);
-      this.selectService.images.optionsGo = optionsGo;
-      this.selectService.images.optionsNode = optionsNode;
-      this.optionsGo = this.selectService.images.optionsGo;
-      this.optionsNode = this.selectService.images.optionsNode;
+    updateOptions(onlyChange=false) {
+      if (!onlyChange || (this.selectService.images.optionsGo.length === 0 && this.selectService.images.optionsNode.length === 0)) {
+        updateImages(this.selectService);
+      }
     },
     rnd(low, high) {
       return Math.floor(Math.random() * (high - low + 1) + low) * (Math.random() % 2 === 0 ? -1 : 1) / 100;
     },
     selectChange(e) {
       this.selectService = getService(e);
-      this.updateOptions();
+      this.updateOptions(true);
     },
     sliderChange(e) {
       this.updateOptions();

@@ -5,15 +5,23 @@ export const MockServices = {
     label: 'userService',
     index: 0,
     changePercent: 0,
+    flowRate: 20,
     maxCount: 10,
-    images: {}
+    images: {
+      optionsGo: [],
+      optionsNode: []
+    }
   }, {
     value: 'service2',
     label: 'imageService',
     index: 1,
     changePercent: 0,
+    flowRate: 30,
     maxCount: 10,
-    images: {}
+    images: {
+      optionsGo: [],
+      optionsNode: []
+    }
   }],
   value: 'service1'
 };

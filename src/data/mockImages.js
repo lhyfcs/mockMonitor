@@ -48,55 +48,56 @@ export function rnd(low, high, pre) {
 }
 
 const reducePercent = 0.4;
-const increasePercent = 0.8;
+const increasePercent = 0.9;
 
 function autoscalingImages(app) {
   // validate each image cpu status, if 
-  let scaleUp = app.optionsGo.some((option) => option.series[0].data[0] > increasePercent) 
-    || app.optionsNode.some((option) => option.series[0].data[0] > increasePercent);
-  let scaleDown = app.optionsGo.some((option) => option.series[0].data[0] < reducePercent) 
-  || app.optionsNode.some((option) => option.series[0].data[0] < reducePercent);
-  const { selectService: { maxCount, changePercent }, flowRate } = app;
+  const { selectService: { images: { optionsGo, optionsNode}}} = app;
+  let scaleUp = optionsGo.some((option) => option.series[0].data[0] > increasePercent) 
+    || optionsNode.some((option) => option.series[0].data[0] > increasePercent);
+  let scaleDown = optionsGo.some((option) => option.series[0].data[0] < reducePercent) 
+  || optionsNode.some((option) => option.series[0].data[0] < reducePercent);
+  const { selectService: { maxCount, changePercent, flowRate } } = app;
   const maxGo = Math.floor(changePercent * maxCount / 100);
   const maxNode = Math.floor((100 - changePercent) * maxCount / 100);
-  const goUsePercent = maxGo === 0? 0 : app.optionsGo.length / maxGo;
-  const nodeUsePercent = maxNode === 0? 0 : app.optionsNode.length / maxNode;
+  const goUsePercent = maxGo === 0? 0 : optionsGo.length / maxGo;
+  const nodeUsePercent = maxNode === 0? 0 : optionsNode.length / maxNode;
   let needUpdate = false;
   if (scaleUp) {
-    if (goUsePercent > nodeUsePercent && app.optionsNode.length < maxNode) {
-      app.optionsNode.push(newImage());
+    if (goUsePercent > nodeUsePercent && optionsNode.length < maxNode) {
+      optionsNode.push(newImage());
       needUpdate = true;
-    } else if (goUsePercent < nodeUsePercent && app.optionsGo.length < maxGo){
-      app.optionsGo.push(newImage());
+    } else if (goUsePercent < nodeUsePercent && optionsGo.length < maxGo){
+      optionsGo.push(newImage());
       needUpdate = true;
-    } else if (app.optionsNode.length < maxNode) {
-      app.optionsNode.push(newImage());
+    } else if (optionsNode.length < maxNode) {
+      optionsNode.push(newImage());
       needUpdate = true;
-    } else if (app.optionsGo.length < maxGo) {
-      app.optionsGo.push(newImage());
+    } else if (optionsGo.length < maxGo) {
+      optionsGo.push(newImage());
       needUpdate = true;
     }
   } else if (scaleDown) {
-    if (goUsePercent > nodeUsePercent && app.optionsGo.length > 0) {
-      app.optionsGo.shift();
+    if (goUsePercent > nodeUsePercent && optionsGo.length > 0) {
+      optionsGo.shift();
       needUpdate = true;
-    } else if (goUsePercent < nodeUsePercent && app.optionsNode.length > 0) {
-      app.optionsNode.shift();
+    } else if (goUsePercent < nodeUsePercent && optionsNode.length > 0) {
+      optionsNode.shift();
       needUpdate = true;
-    } else if (app.optionsNode.length > 0) {
-      app.optionsNode.shift();
+    } else if (optionsNode.length > 0) {
+      optionsNode.shift();
       needUpdate = true;
-    } else if (app.optionsGo.length > 0) {
-      app.optionsGo.shift();
+    } else if (optionsGo.length > 0) {
+      optionsGo.shift();
       needUpdate = true;
     }
   }
-  if (needUpdate && (app.optionsGo.length !== 0 || app.optionsNode.length !== 0)) {
-    const average = 0.8 * maxCount * flowRate / 100 / (app.optionsGo.length + app.optionsNode.length);
-    app.optionsGo.forEach((image) => {
+  if (needUpdate && (optionsGo.length !== 0 || optionsNode.length !== 0)) {
+    const average = 0.8 * maxCount * flowRate / 100 / (optionsGo.length + optionsNode.length);
+    optionsGo.forEach((image) => {
       image.series[0].data = [rnd(1, 5, average)];
     });
-    app.optionsNode.forEach((image) => {
+    optionsNode.forEach((image) => {
       image.series[0].data = [rnd(1, 5, average)];
     });
   }
@@ -104,10 +105,10 @@ function autoscalingImages(app) {
 
 export function connectComponent(app) {
   const updateCPUPercent = () => {
-    app.optionsGo.forEach((option) => {
+    app.selectService.images.optionsGo.forEach((option) => {
       option.series[0].data = [rnd(1, 5, option.series[0].data[0])];
     });
-    app.optionsNode.forEach((option) => {
+    app.selectService.images.optionsNode.forEach((option) => {
       option.series[0].data = [rnd(1, 5, option.series[0].data[0])];
     });
     autoscalingImages(app);
@@ -143,8 +144,11 @@ function generateNewImages(preImages, service, average, usePercent) {
 }
 
 // with change rate and flow rate, update current golang and nodejs service running status
-export function updateImages(flowRate, service, preGolangImages, preNodejsImages) {
+export function updateImages(service) {
   // set max flow is 0.8 * service.maxCount
+  const { flowRate } = service; 
+  let preGolangImages = service.images.optionsGo;
+  let preNodejsImages = service.images.optionsNode;
   let golangCount = preGolangImages.length;
   if (golangCount === 0 && service.changePercent > 0) {
     preGolangImages = [JSON.parse(JSON.stringify(defaultImage))];
@@ -167,5 +171,7 @@ export function updateImages(flowRate, service, preGolangImages, preNodejsImages
   preNodejsImages.forEach((image) => {
     image.series[0].data = [rnd(1, 5, average)];
   });
+  service.images.optionsGo = preGolangImages;
+  service.images.optionsNode = preNodejsImages;
   return [preGolangImages, preNodejsImages];
 }
